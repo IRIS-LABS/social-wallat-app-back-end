@@ -18,9 +18,14 @@ const responseCreator = require("../utils/responseCreator");
  *          body:{},
  *          query:{},
  *          params:{},
- *      }
+ *      },
  *
- *      expected
+ *      expectedFiles: [
+ *        { name: "nicFront", maxCount: 1 },
+ *        { name: "nicBack", maxCount: 1 },
+ *        { name: "businessRegistrationCertificate", maxCount: 1 },
+ *        { name: "pharmacyLicense", maxCount: 1 },
+ *       ],
  *
  *      handler(req,res){
  *          Logic to handle the route
