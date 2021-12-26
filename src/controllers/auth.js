@@ -1,7 +1,8 @@
 const Joi = require("joi");
 const responseCreator = require("../utils/responseCreator");
 const { sequelize, Sequelize } = require("../database/models");
-const passwordComplexity = require("passwordComplexity");
+const passwordComplexity = require("joi-password-complexity");
+const bcrypt = require("bcrypt");
 
 const signUp = {
   security: {
@@ -39,28 +40,89 @@ const signUp = {
         .email({ tlds: true })
         .required()
         .label("Email address"),
-      password: Joi.string().required().label("Password"),
+      password: passwordComplexity({
+        min: 8,
+        max: 30,
+        lowerCase: 1,
+        upperCase: 1,
+        numeric: 1,
+        symbol: 1,
+        requirementCount: 4,
+      })
+        .required()
+        .label("Password"),
     },
   },
 
   async handler(req, res) {
     try {
-      const data = req.body;
+      await sequelize.transaction(async (t) => {
+        const userAccountExistance = await sequelize.models.UserAccount.findOne(
+          {
+            where: {
+              email: req.body.email,
+            },
+          }
+        );
 
-      console.log(data);
+        if (userAccountExistance) {
+          if (userAccountExistance.thirdParty)
+            throw new Error(
+              "You are already registered using the google authorization service"
+            );
+          throw new Error("Email address is already registered");
+        }
+
+        const userData = { ...req.body };
+        delete userData["email"];
+        delete userData["password"];
+
+        const encryptedPassword = await bcrypt.hash(req.body.password, 10);
+
+        const user = await sequelize.models.User.create(userData);
+        await sequelize.models.UserAccount.create({
+          userID: user.userID,
+          email: req.body.email,
+          password: encryptedPassword,
+        });
+      });
+
       res
         .status(200)
         .send(
           responseCreator("success", "Successfully registered the new user")
         );
     } catch (e) {
-      res
-        .status(400)
-        .send(responseCreator("error", "Request can't be proceed"));
+      const errorMsg = e.message;
+
+      switch (errorMsg) {
+        case "Email address is already registered":
+          res
+            .status(400)
+            .send(
+              responseCreator("error", "Email address is already registered")
+            );
+          break;
+        case "You are already registered using the google authorization service":
+          res
+            .status(400)
+            .send(
+              responseCreator(
+                "error",
+                "You are already registered using the google authorization service"
+              )
+            );
+          break;
+        default:
+          res
+            .status(400)
+            .send(responseCreator("error", "Request can't be proceed"));
+      }
     }
   },
 };
 
 module.exports = {
   signUp,
+  signIn,
 };
