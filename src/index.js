@@ -16,12 +16,14 @@ app.use(express.urlencoded({ limit: "10mb", extended: true }));
 
 //Routers
 const exampleRouter = require("./routes/exampleRouter");
+const authRouter = require("./routes/authRouter");
 
 app.get("/", (req, res) => {
   res.status(200).send("Server is ok!");
 });
 
 app.use("/api/example", exampleRouter);
+app.use("/api/auth", authRouter);
 
 const port = process.env.PORT || 8000;
 
