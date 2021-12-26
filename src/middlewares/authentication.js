@@ -19,7 +19,7 @@ const authenticateUser = () => (req, res, next) => {
             .status(401)
             .send(generateResponse("error", "Access token is not valid"));
         } else {
-          req.tokenData = data;
+          req.user = data;
           next();
         }
       }
