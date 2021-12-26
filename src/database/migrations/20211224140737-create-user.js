@@ -18,27 +18,21 @@ module.exports = {
       },
       phoneNumber: {
         type: Sequelize.STRING,
-        allowNull: false,
       },
       jobTitle: {
         type: Sequelize.STRING,
-        allowNull: false,
       },
       linkedinURL: {
         type: Sequelize.STRING,
-        allowNull: false,
       },
       facebookURL: {
         type: Sequelize.STRING,
-        allowNull: false,
       },
       twitterURL: {
         type: Sequelize.STRING,
-        allowNull: false,
       },
       personalWebsiteURL: {
         type: Sequelize.STRING,
-        allowNull: false,
       },
       createdAt: {
         allowNull: false,
