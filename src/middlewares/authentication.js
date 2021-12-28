@@ -20,7 +20,12 @@ const authenticateUser = () => (req, res, next) => {
             .send(generateResponse("error", "Access token is not valid"));
         } else {
           req.user = data;
-          next();
+
+          if (req.user.incomplete)
+            res
+              .status(400)
+              .send(generateResponse("error", "Account is not completed"));
+          else next();
         }
       }
     );

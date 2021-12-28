@@ -168,13 +168,17 @@ const getPartialUserData = {
 
   async handler(req, res) {
     try {
+      const userAccountData = await sequelize.models.UserAccount.findOne({
+        where: { userID: req.user.userID },
+        attributes: ["email", "thirdParty"],
+      });
+
+      if (!userAccountData.thirdParty)
+        throw new Error("Not a third party authentication user");
+
       const userData = await sequelize.models.User.findOne({
         userID: req.user.userID,
         attributes: ["firstName", "lastName"],
-      });
-      const userAccountData = await sequelize.models.UserAccount.findOne({
-        where: { userID: req.user.userID },
-        attributes: ["email"],
       });
       userData.dataValues["email"] = userAccountData.email;
 
@@ -232,8 +236,15 @@ const completeUserProfile = {
 
   async handler(req, res) {
     try {
-      delete req.body.email;
-      await sequelize.models.User.update(req.body.email, {
+      // const userAccountData = await sequelize.models.UserAccount.findOne({
+      //   where: { userID: req.user.userID },
+      //   attributes: ["thirdParty"],
+      // });
+
+      // if (!userAccountData.thirdParty)
+      //   throw new Error("Not a third party authentication user");
+
+      await sequelize.models.User.update(req.body, {
         where: { userID: req.user.userID },
       });
 
