@@ -179,7 +179,7 @@ const signIn = {
           path: "/",
           maxAge: new Date(
             new Date().getTime() +
-              1000 * 60 * 60 * 24 * config.get("ACCESS_TOKEN_TIME")
+            1000 * 60 * 60 * 24 * config.get("ACCESS_TOKEN_TIME")
           ),
           httpOnly: true,
           //secure: true,
@@ -219,7 +219,72 @@ const signIn = {
   },
 };
 
+const updateProfile = {
+  security: {
+    authenticationLayer: true,
+    authorizationLayer: false,
+    validationLayer: true,
+  },
+
+  validationSchema: {
+    body: {
+      firstName: Joi.string()
+        .pattern(/^[a-z A-Z]+$/, "english character (a-z, A-Z)")
+        .required()
+        .label("First name"),
+      lastName: Joi.string()
+        .pattern(/^[a-z A-Z]+$/, "english character (a-z, A-Z)")
+        .required()
+        .label("Last name"),
+      phoneNumber: Joi.string()
+        .pattern(/^[+0-9]+$/, "phone number (Characters allowed: 0-9, +)")
+        .required()
+        .label("Phone number"),
+      jobTitle: Joi.string()
+        .pattern(/^[a-z A-Z]+$/, "english character (a-z, A-Z)")
+        .required()
+        .label("Job title"),
+      linkedinURL: Joi.string().uri().required().label("Linkedin account URL"),
+      facebookURL: Joi.string().uri().required().label("Facebook account URL"),
+      twitterURL: Joi.string().uri().required().label("Twitter account URL"),
+      personalWebsiteURL: Joi.string()
+        .uri()
+        .required()
+        .label("Personal website URL"),
+    },
+  },
+
+  async handler(req, res) {
+    try {
+      await sequelize.models.User.update({
+        firstName: req.body.firstName,
+        lastName: req.body.lastName,
+        phoneNumber: req.body.phoneNumber,
+        jobTitle: req.body.jobTitle,
+        linkedinURL: req.body.linkedinURL,
+        facebookURL: req.body.facebookURL,
+        twitterURL: req.body.twitterURL,
+        personalWebsiteURL: req.body.personalWebsiteURL,
+      },
+        { where: { userID: req.user.userID } })
+      res
+        .status(200)
+        .send(
+          responseCreator("success", "Profile updated successfully...",)
+        );
+    } catch (e) {
+      const errorMsg = e.message;
+      console.log(errorMsg);
+      res
+        .status(400)
+        .send(responseCreator("error", "Request can't be proceed"));
+
+    }
+  },
+};
+
 module.exports = {
   signUp,
   signIn,
+  updateProfile
 };
