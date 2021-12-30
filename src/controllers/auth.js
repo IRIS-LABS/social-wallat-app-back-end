@@ -43,7 +43,7 @@ const signUp = {
 
   async handler(req, res) {
     try {
-      await sequelize.transaction(async (t) => {
+      const user = await sequelize.transaction(async (t) => {
         const userAccountExistance = await sequelize.models.UserAccount.findOne(
           {
             where: {
@@ -72,12 +72,42 @@ const signUp = {
           email: req.body.email,
           password: encryptedPassword,
         });
+
+        delete user.dataValues.createdAt;
+        delete user.dataValues.updatedAt;
+        user.dataValues.email = req.body.email;
+
+        return user;
       });
+
+      res.cookie(
+        "accessToken",
+        tokenManager.generateToken(
+          { userID: user.userID },
+          config.get("ACCESS_TOKEN_SECRET"),
+          `${1000 * 60 * 60 * 24 * config.get("ACCESS_TOKEN_TIME")}`
+        ),
+        {
+          sameSite: "strict",
+          path: "/",
+          maxAge: new Date(
+            new Date().getTime() +
+              1000 * 60 * 60 * 24 * config.get("ACCESS_TOKEN_TIME")
+          ),
+          httpOnly: true,
+          //secure: true,
+          signed: true,
+        }
+      );
 
       res
         .status(200)
         .send(
-          responseCreator("success", "Successfully registered the new user")
+          responseCreator(
+            "success",
+            "Successfully registered the new user",
+            user
+          )
         );
     } catch (e) {
       const errorMsg = e.message;
@@ -128,7 +158,7 @@ const signIn = {
 
   async handler(req, res) {
     try {
-      const userID = await sequelize.transaction(async (t) => {
+      const user = await sequelize.transaction(async (t) => {
         const userAccount = await sequelize.models.UserAccount.findOne({
           where: {
             email: req.body.email,
@@ -149,13 +179,22 @@ const signIn = {
 
         if (!isPasswordCorrect) throw new Error("Wrong Password or Email");
 
-        return userAccount.userID;
+        const user = await sequelize.models.User.findOne({
+          attributes: ["userID", "firstName", "lastName"],
+          where: {
+            userID: userAccount.userID,
+          },
+        });
+
+        user.dataValues.email = userAccount.email;
+
+        return user;
       });
 
       res.cookie(
         "accessToken",
         tokenManager.generateToken(
-          { userID },
+          { userID: user.userID },
           config.get("ACCESS_TOKEN_SECRET"),
           `${1000 * 60 * 60 * 24 * config.get("ACCESS_TOKEN_TIME")}`
         ),
@@ -174,7 +213,9 @@ const signIn = {
 
       res
         .status(200)
-        .send(responseCreator("success", "User is successfully authenticated"));
+        .send(
+          responseCreator("success", "User is successfully authenticated", user)
+        );
     } catch (e) {
       const errorMsg = e.message;
       console.log(errorMsg);
