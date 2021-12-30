@@ -53,7 +53,7 @@ passport.use(
             });
             return userAccountData.userID;
           });
-          cb(null, { userID, incomplete: true });
+          cb(null, { userID });
         }
       } catch (error) {
         cb(null, false);
