@@ -22,14 +22,4 @@ router.get(
 
 router.get("/verify", handleRequest("thirdPartyAuth", "verify"));
 
-router.get(
-  "/partial-user-data",
-  handleRequest("thirdPartyAuth", "getPartialUserData")
-);
-
-router.post(
-  "/complete-user-profile",
-  handleRequest("thirdPartyAuth", "completeUserProfile")
-);
-
 module.exports = router;

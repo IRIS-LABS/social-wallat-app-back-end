@@ -23,21 +23,6 @@ const signUp = {
         .pattern(/^[a-z A-Z]+$/, "english character (a-z, A-Z)")
         .required()
         .label("Last name"),
-      phoneNumber: Joi.string()
-        .pattern(/^[+0-9]+$/, "phone number (Characters allowed: 0-9, +)")
-        .required()
-        .label("Phone number"),
-      jobTitle: Joi.string()
-        .pattern(/^[a-z A-Z]+$/, "english character (a-z, A-Z)")
-        .required()
-        .label("Job title"),
-      linkedinURL: Joi.string().uri().required().label("Linkedin account URL"),
-      facebookURL: Joi.string().uri().required().label("Facebook account URL"),
-      twitterURL: Joi.string().uri().required().label("Twitter account URL"),
-      personalWebsiteURL: Joi.string()
-        .uri()
-        .required()
-        .label("Personal website URL"),
       email: Joi.string()
         .email({ tlds: true })
         .required()
