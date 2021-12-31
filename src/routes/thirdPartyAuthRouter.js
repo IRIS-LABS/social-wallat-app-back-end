@@ -14,7 +14,7 @@ router.get(
 router.get(
   "/google/callback",
   passport.authenticate("google", {
-    failureRedirect: `${config.get("FRONTEND_URL")}/error?code=#2112261`,
+    failureRedirect: `${config.get("FRONTEND_URL")}/signin?code=2112261`,
     session: false,
   }),
   handleRequest("thirdPartyAuth", "googleCallback")

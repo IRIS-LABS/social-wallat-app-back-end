@@ -53,7 +53,7 @@ passport.use(
             });
             return userAccountData.userID;
           });
-          cb(null, { userID });
+          cb(null, { userID, profile: true });
         }
       } catch (error) {
         cb(null, false);
@@ -76,12 +76,12 @@ const googleCallback = {
         case "Email is not verified":
           res
             .status(302)
-            .redirect(`${config.get("FRONTEND_URL")}/error?code=#2112262`);
+            .redirect(`${config.get("FRONTEND_URL")}/signup?code=2112262`);
           return;
         case "Uses is already registered as local user":
           res
             .status(302)
-            .redirect(`${config.get("FRONTEND_URL")}/error?code=#2112263`);
+            .redirect(`${config.get("FRONTEND_URL")}/signup?code=2112263`);
           return;
       }
     }
@@ -111,7 +111,7 @@ const verify = {
     },
   },
 
-  handler(req, res) {
+  async handler(req, res) {
     try {
       const token = req.query.token;
 
@@ -123,6 +123,12 @@ const verify = {
       const timeChange = new Date().getTime() - global[token].time;
 
       if (timeChange > 5 * 60 * 1000) throw new Error("Token expired");
+
+      let register = false;
+      if (global[token].data.profile) {
+        register = true;
+        delete global[token].data.profile;
+      }
 
       res.cookie(
         "accessToken",
@@ -144,13 +150,38 @@ const verify = {
         }
       );
 
+      const userData = await sequelize.models.User.findOne({
+        attributes: ["userID", "firstName", "lastName"],
+        where: { userID: global[token].data.userID },
+      });
+      const userAccountData = await sequelize.models.UserAccount.findOne({
+        attributes: ["email"],
+        where: { userID: global[token].data.userID },
+      });
+      userData.dataValues.email = userAccountData.email;
+
       delete global[token];
 
-      res
-        .status(200)
-        .send(
-          generateResponse("success", "Third party authorization is completed")
-        );
+      if (register)
+        res
+          .status(200)
+          .send(
+            generateResponse(
+              "success",
+              "Third party authorization is completed",
+              { register: true, user: userData }
+            )
+          );
+      else
+        res
+          .status(200)
+          .send(
+            generateResponse(
+              "success",
+              "Third party authorization is completed",
+              { register: false, user: userData }
+            )
+          );
     } catch (e) {
       res
         .status(400)

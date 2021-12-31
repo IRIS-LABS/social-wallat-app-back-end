@@ -245,7 +245,48 @@ const signIn = {
   },
 };
 
+const logout = {
+  security: {
+    authenticationLayer: true,
+    authorizationLayer: false,
+    validationLayer: false,
+  },
+
+  async handler(req, res) {
+    try {
+      res.cookie(
+        "accessToken",
+        tokenManager.generateToken(
+          {},
+          config.get("ACCESS_TOKEN_SECRET"),
+          `${-1000 * 60 * 60 * 24 * config.get("ACCESS_TOKEN_TIME")}`
+        ),
+        {
+          sameSite: "strict",
+          path: "/",
+          maxAge: new Date(
+            new Date().getTime() -
+              1000 * 60 * 60 * 24 * config.get("ACCESS_TOKEN_TIME")
+          ),
+          httpOnly: true,
+          //secure: true,
+          signed: true,
+        }
+      );
+
+      res
+        .status(200)
+        .send(responseCreator("success", "User is successfully signed out"));
+    } catch (e) {
+      res
+        .status(400)
+        .send(responseCreator("error", "Request can't be proceed"));
+    }
+  },
+};
+
 module.exports = {
   signUp,
   signIn,
+  logout,
 };
