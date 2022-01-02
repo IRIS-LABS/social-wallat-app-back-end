@@ -53,7 +53,7 @@ passport.use(
             });
             return userAccountData.userID;
           });
-          cb(null, { userID, incomplete: true });
+          cb(null, { userID, profile: true });
         }
       } catch (error) {
         cb(null, false);
@@ -76,12 +76,12 @@ const googleCallback = {
         case "Email is not verified":
           res
             .status(302)
-            .redirect(`${config.get("FRONTEND_URL")}/error?code=#2112262`);
+            .redirect(`${config.get("FRONTEND_URL")}/signup?code=2112262`);
           return;
         case "Uses is already registered as local user":
           res
             .status(302)
-            .redirect(`${config.get("FRONTEND_URL")}/error?code=#2112263`);
+            .redirect(`${config.get("FRONTEND_URL")}/signup?code=2112263`);
           return;
       }
     }
@@ -111,7 +111,7 @@ const verify = {
     },
   },
 
-  handler(req, res) {
+  async handler(req, res) {
     try {
       const token = req.query.token;
 
@@ -123,6 +123,12 @@ const verify = {
       const timeChange = new Date().getTime() - global[token].time;
 
       if (timeChange > 5 * 60 * 1000) throw new Error("Token expired");
+
+      let register = false;
+      if (global[token].data.profile) {
+        register = true;
+        delete global[token].data.profile;
+      }
 
       res.cookie(
         "accessToken",
@@ -144,13 +150,38 @@ const verify = {
         }
       );
 
+      const userData = await sequelize.models.User.findOne({
+        attributes: ["userID", "firstName", "lastName"],
+        where: { userID: global[token].data.userID },
+      });
+      const userAccountData = await sequelize.models.UserAccount.findOne({
+        attributes: ["email"],
+        where: { userID: global[token].data.userID },
+      });
+      userData.dataValues.email = userAccountData.email;
+
       delete global[token];
 
-      res
-        .status(200)
-        .send(
-          generateResponse("success", "Third party authorization is completed")
-        );
+      if (register)
+        res
+          .status(200)
+          .send(
+            generateResponse(
+              "success",
+              "Third party authorization is completed",
+              { register: true, user: userData }
+            )
+          );
+      else
+        res
+          .status(200)
+          .send(
+            generateResponse(
+              "success",
+              "Third party authorization is completed",
+              { register: false, user: userData }
+            )
+          );
     } catch (e) {
       res
         .status(400)
@@ -159,119 +190,8 @@ const verify = {
   },
 };
 
-const getPartialUserData = {
-  security: {
-    authenticationLayer: true,
-    authorizationLayer: false,
-    validationLayer: false,
-  },
-
-  async handler(req, res) {
-    try {
-      const userData = await sequelize.models.User.findOne({
-        userID: req.user.userID,
-        attributes: ["firstName", "lastName"],
-      });
-      const userAccountData = await sequelize.models.UserAccount.findOne({
-        where: { userID: req.user.userID },
-        attributes: ["email"],
-      });
-      userData.dataValues["email"] = userAccountData.email;
-
-      res
-        .status(200)
-        .send(
-          generateResponse(
-            "success",
-            "Partially completed data is succefully retrieved",
-            userData
-          )
-        );
-    } catch (e) {
-      res
-        .status(400)
-        .send(generateResponse("error", "Request can't be proceed"));
-    }
-  },
-};
-
-const completeUserProfile = {
-  security: {
-    authenticationLayer: true,
-    authorizationLayer: false,
-    validationLayer: true,
-  },
-
-  validationSchema: {
-    body: {
-      firstName: Joi.string()
-        .pattern(/^[a-z A-Z]+$/, "english character (a-z, A-Z)")
-        .required()
-        .label("First name"),
-      lastName: Joi.string()
-        .pattern(/^[a-z A-Z]+$/, "english character (a-z, A-Z)")
-        .required()
-        .label("Last name"),
-      phoneNumber: Joi.string()
-        .pattern(/^[+0-9]+$/, "phone number (Characters allowed: 0-9, +)")
-        .required()
-        .label("Phone number"),
-      jobTitle: Joi.string()
-        .pattern(/^[a-z A-Z]+$/, "english character (a-z, A-Z)")
-        .required()
-        .label("Job title"),
-      linkedinURL: Joi.string().uri().required().label("Linkedin account URL"),
-      facebookURL: Joi.string().uri().required().label("Facebook account URL"),
-      twitterURL: Joi.string().uri().required().label("Twitter account URL"),
-      personalWebsiteURL: Joi.string()
-        .uri()
-        .required()
-        .label("Personal website URL"),
-    },
-  },
-
-  async handler(req, res) {
-    try {
-      delete req.body.email;
-      await sequelize.models.User.update(req.body.email, {
-        where: { userID: req.user.userID },
-      });
-
-      res.cookie(
-        "accessToken",
-        tokenManager.generateToken(
-          { userID: req.user.userID },
-          config.get("ACCESS_TOKEN_SECRET"),
-          `${1000 * 60 * 60 * 24 * config.get("ACCESS_TOKEN_TIME")}`
-        ),
-        {
-          sameSite: "strict",
-          path: "/",
-          expires: new Date(
-            new Date().getTime() +
-              1000 * 60 * 60 * 24 * config.get("ACCESS_TOKEN_TIME")
-          ),
-          httpOnly: true,
-          //secure: true,
-          signed: true,
-        }
-      );
-
-      res
-        .status(200)
-        .send(generateResponse("success", "User account is completed"));
-    } catch (e) {
-      res
-        .status(400)
-        .send(generateResponse("error", "Request can't be proceed"));
-    }
-  },
-};
-
 module.exports = {
   passport,
   googleCallback,
   verify,
-  completeUserProfile,
-  getPartialUserData,
 };

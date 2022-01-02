@@ -23,21 +23,6 @@ const signUp = {
         .pattern(/^[a-z A-Z]+$/, "english character (a-z, A-Z)")
         .required()
         .label("Last name"),
-      phoneNumber: Joi.string()
-        .pattern(/^[+0-9]+$/, "phone number (Characters allowed: 0-9, +)")
-        .required()
-        .label("Phone number"),
-      jobTitle: Joi.string()
-        .pattern(/^[a-z A-Z]+$/, "english character (a-z, A-Z)")
-        .required()
-        .label("Job title"),
-      linkedinURL: Joi.string().uri().required().label("Linkedin account URL"),
-      facebookURL: Joi.string().uri().required().label("Facebook account URL"),
-      twitterURL: Joi.string().uri().required().label("Twitter account URL"),
-      personalWebsiteURL: Joi.string()
-        .uri()
-        .required()
-        .label("Personal website URL"),
       email: Joi.string()
         .email({ tlds: true })
         .required()
@@ -58,7 +43,7 @@ const signUp = {
 
   async handler(req, res) {
     try {
-      await sequelize.transaction(async (t) => {
+      const user = await sequelize.transaction(async (t) => {
         const userAccountExistance = await sequelize.models.UserAccount.findOne(
           {
             where: {
@@ -87,12 +72,42 @@ const signUp = {
           email: req.body.email,
           password: encryptedPassword,
         });
+
+        delete user.dataValues.createdAt;
+        delete user.dataValues.updatedAt;
+        user.dataValues.email = req.body.email;
+
+        return user;
       });
+
+      res.cookie(
+        "accessToken",
+        tokenManager.generateToken(
+          { userID: user.userID },
+          config.get("ACCESS_TOKEN_SECRET"),
+          `${1000 * 60 * 60 * 24 * config.get("ACCESS_TOKEN_TIME")}`
+        ),
+        {
+          sameSite: "strict",
+          path: "/",
+          maxAge: new Date(
+            new Date().getTime() +
+            1000 * 60 * 60 * 24 * config.get("ACCESS_TOKEN_TIME")
+          ),
+          httpOnly: true,
+          //secure: true,
+          signed: true,
+        }
+      );
 
       res
         .status(200)
         .send(
-          responseCreator("success", "Successfully registered the new user")
+          responseCreator(
+            "success",
+            "Successfully registered the new user",
+            user
+          )
         );
     } catch (e) {
       const errorMsg = e.message;
@@ -143,7 +158,7 @@ const signIn = {
 
   async handler(req, res) {
     try {
-      const userID = await sequelize.transaction(async (t) => {
+      const user = await sequelize.transaction(async (t) => {
         const userAccount = await sequelize.models.UserAccount.findOne({
           where: {
             email: req.body.email,
@@ -164,13 +179,22 @@ const signIn = {
 
         if (!isPasswordCorrect) throw new Error("Wrong Password or Email");
 
-        return userAccount.userID;
+        const user = await sequelize.models.User.findOne({
+          attributes: ["userID", "firstName", "lastName"],
+          where: {
+            userID: userAccount.userID,
+          },
+        });
+
+        user.dataValues.email = userAccount.email;
+
+        return user;
       });
 
       res.cookie(
         "accessToken",
         tokenManager.generateToken(
-          { userID },
+          { userID: user.userID },
           config.get("ACCESS_TOKEN_SECRET"),
           `${1000 * 60 * 60 * 24 * config.get("ACCESS_TOKEN_TIME")}`
         ),
@@ -189,7 +213,9 @@ const signIn = {
 
       res
         .status(200)
-        .send(responseCreator("success", "User is successfully authenticated"));
+        .send(
+          responseCreator("success", "User is successfully authenticated", user)
+        );
     } catch (e) {
       const errorMsg = e.message;
       console.log(errorMsg);
@@ -251,9 +277,8 @@ const updateProfile = {
         .uri()
         .required()
         .label("Personal website URL"),
-    },
+    }
   },
-
   async handler(req, res) {
     try {
       await sequelize.models.User.update({
@@ -278,7 +303,46 @@ const updateProfile = {
       res
         .status(400)
         .send(responseCreator("error", "Request can't be proceed"));
+    }
+  }
+};
 
+const logout = {
+  security: {
+    authenticationLayer: true,
+    authorizationLayer: false,
+    validationLayer: false,
+  },
+
+  async handler(req, res) {
+    try {
+      res.cookie(
+        "accessToken",
+        tokenManager.generateToken(
+          {},
+          config.get("ACCESS_TOKEN_SECRET"),
+          `${-1000 * 60 * 60 * 24 * config.get("ACCESS_TOKEN_TIME")}`
+        ),
+        {
+          sameSite: "strict",
+          path: "/",
+          maxAge: new Date(
+            new Date().getTime() -
+            1000 * 60 * 60 * 24 * config.get("ACCESS_TOKEN_TIME")
+          ),
+          httpOnly: true,
+          //secure: true,
+          signed: true,
+        }
+      );
+
+      res
+        .status(200)
+        .send(responseCreator("success", "User is successfully signed out"));
+    } catch (e) {
+      res
+        .status(400)
+        .send(responseCreator("error", "Request can't be proceed"));
     }
   },
 };
@@ -286,5 +350,6 @@ const updateProfile = {
 module.exports = {
   signUp,
   signIn,
-  updateProfile
+  updateProfile,
+  logout,
 };
