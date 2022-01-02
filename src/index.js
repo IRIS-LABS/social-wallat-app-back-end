@@ -17,6 +17,7 @@ app.use(express.urlencoded({ limit: "10mb", extended: true }));
 //Routers
 const exampleRouter = require("./routes/exampleRouter");
 const authRouter = require("./routes/authRouter");
+const connectionRouter = require('./routes/connectionRouter');
 const thirdPartyAuthRouter = require("./routes/thirdPartyAuthRouter");
 
 app.get("/", (req, res) => {
@@ -25,6 +26,7 @@ app.get("/", (req, res) => {
 
 app.use("/api/example", exampleRouter);
 app.use("/api/auth", authRouter);
+app.use("/api/connection", connectionRouter);
 app.use("/api/auth/third-party", thirdPartyAuthRouter);
 
 const port = process.env.PORT || 8000;
