@@ -46,6 +46,55 @@ const addConnection = {
     },
 };
 
+const removeConnection = {
+    security: {
+        authenticationLayer: true,
+        authorizationLayer: false,
+        validationLayer: true,
+    },
+
+    validationSchema: {
+        body: {
+            connectedUserID: Joi.string()
+                .required()
+                .label("Connected User ID")
+        },
+    },
+
+    async handler(req, res) {
+        try {
+            if (req.user.userID === req.body.connectedUserID) {
+                return res
+                    .status(400)
+                    .send(responseCreator("error", "No connection with user himself"));
+            }
+
+            await sequelize.models.Connection.destroy({
+                where: {
+                    userID: {
+                        [Sequelize.Op.eq]: req.user.userID,
+                    },
+                    connectedUserID: {
+                        [Sequelize.Op.eq]: req.body.connectedUserID
+                    }
+                }
+            });
+
+            res
+                .status(200)
+                .send(
+                    responseCreator("success", "Successfully removed connection")
+                );
+        } catch (e) {
+            const errorMsg = e.message;
+            console.log(errorMsg);
+            res
+                .status(400)
+                .send(responseCreator("error", "Request can't be proceed"));
+        }
+    },
+};
+
 const getConnections = {
     security: {
         authenticationLayer: true,
@@ -125,6 +174,7 @@ const getAllUsers = {
 
 module.exports = {
     addConnection,
+    removeConnection,
     getConnections,
     getAllUsers
 };
