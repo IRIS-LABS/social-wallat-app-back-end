@@ -263,20 +263,35 @@ const updateProfile = {
         .required()
         .label("Last name"),
       phoneNumber: Joi.string()
+        .allow("")
+        .optional()
         .pattern(/^[+0-9]+$/, "phone number (Characters allowed: 0-9, +)")
-        .required()
         .label("Phone number"),
       jobTitle: Joi.string()
+        .allow("")
+        .optional()
         .pattern(/^[a-z A-Z]+$/, "english character (a-z, A-Z)")
-        .required()
         .label("Job title"),
-      linkedinURL: Joi.string().uri().required().label("Linkedin account URL"),
-      facebookURL: Joi.string().uri().required().label("Facebook account URL"),
-      twitterURL: Joi.string().uri().required().label("Twitter account URL"),
-      personalWebsiteURL: Joi.string()
+      linkedinURL: Joi.string()
+        .allow("")
+        .optional()
         .uri()
-        .required()
-        .label("Personal website URL"),
+        .label("Linkedin account URL"),
+      facebookURL: Joi.string()
+        .allow("")
+        .optional()
+        .uri()
+        .label("Facebook account URL"),
+      twitterURL: Joi.string()
+        .allow("")
+        .optional()
+        .uri()
+        .label("Twitter account URL"),
+      personalWebsiteURL: Joi.string()
+        .allow("")
+        .optional()
+        .uri()
+        .label("Personal website URL")
     }
   },
   async handler(req, res) {
@@ -299,7 +314,37 @@ const updateProfile = {
         );
     } catch (e) {
       const errorMsg = e.message;
-      console.log(errorMsg);
+      console.log("Error");
+      res
+        .status(400)
+        .send(responseCreator("error", "Request can't be proceed"));
+    }
+  }
+};
+const getProfile = {
+  security: {
+    authenticationLayer: true,
+    authorizationLayer: false,
+    validationLayer: false,
+  },
+  async handler(req, res) {
+    try {
+      const profile = await sequelize.models.User.findOne({
+        where: {
+          userID: req.user.userID
+        },
+        attributes: {
+          exclude: ["updatedAt", 'createdAt']
+        }
+      })
+      res
+        .status(200)
+        .send(
+          responseCreator("success", "Profile retrieved successfully...", profile)
+        );
+    } catch (e) {
+      const errorMsg = e.message;
+      console.log("Error");
       res
         .status(400)
         .send(responseCreator("error", "Request can't be proceed"));
@@ -351,5 +396,6 @@ module.exports = {
   signUp,
   signIn,
   updateProfile,
+  getProfile,
   logout,
 };
