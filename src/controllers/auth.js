@@ -92,9 +92,9 @@ const signUp = {
         {
           sameSite: "strict",
           path: "/",
-          maxAge: new Date(
+          expires: new Date(
             new Date().getTime() +
-            1000 * 60 * 60 * 24 * config.get("ACCESS_TOKEN_TIME")
+              1000 * 60 * 60 * 24 * config.get("ACCESS_TOKEN_TIME")
           ),
           httpOnly: true,
           //secure: true,
@@ -203,9 +203,9 @@ const signIn = {
         {
           sameSite: "strict",
           path: "/",
-          maxAge: new Date(
+          expires: new Date(
             new Date().getTime() +
-            1000 * 60 * 60 * 24 * config.get("ACCESS_TOKEN_TIME")
+              1000 * 60 * 60 * 24 * config.get("ACCESS_TOKEN_TIME")
           ),
           httpOnly: true,
           //secure: true,
@@ -293,27 +293,27 @@ const updateProfile = {
         .allow("")
         .optional()
         .uri()
-        .label("Personal website URL")
-    }
+        .label("Personal website URL"),
+    },
   },
   async handler(req, res) {
     try {
-      await sequelize.models.User.update({
-        firstName: req.body.firstName,
-        lastName: req.body.lastName,
-        phoneNumber: req.body.phoneNumber,
-        jobTitle: req.body.jobTitle,
-        linkedinURL: req.body.linkedinURL,
-        facebookURL: req.body.facebookURL,
-        twitterURL: req.body.twitterURL,
-        personalWebsiteURL: req.body.personalWebsiteURL,
-      },
-        { where: { userID: req.user.userID } })
+      await sequelize.models.User.update(
+        {
+          firstName: req.body.firstName,
+          lastName: req.body.lastName,
+          phoneNumber: req.body.phoneNumber,
+          jobTitle: req.body.jobTitle,
+          linkedinURL: req.body.linkedinURL,
+          facebookURL: req.body.facebookURL,
+          twitterURL: req.body.twitterURL,
+          personalWebsiteURL: req.body.personalWebsiteURL,
+        },
+        { where: { userID: req.user.userID } }
+      );
       res
         .status(200)
-        .send(
-          responseCreator("success", "Profile updated successfully...",)
-        );
+        .send(responseCreator("success", "Profile updated successfully..."));
     } catch (e) {
       const errorMsg = e.message;
       console.log("Error");
@@ -321,7 +321,7 @@ const updateProfile = {
         .status(400)
         .send(responseCreator("error", "Request can't be proceed"));
     }
-  }
+  },
 };
 
 const uploadProfilePicture = {
@@ -346,16 +346,20 @@ const getProfile = {
     try {
       const profile = await sequelize.models.User.findOne({
         where: {
-          userID: req.user.userID
+          userID: req.user.userID,
         },
         attributes: {
-          exclude: ["updatedAt", 'createdAt']
-        }
-      })
+          exclude: ["updatedAt", "createdAt"],
+        },
+      });
       res
         .status(200)
         .send(
-          responseCreator("success", "Profile retrieved successfully...", profile)
+          responseCreator(
+            "success",
+            "Profile retrieved successfully...",
+            profile
+          )
         );
     } catch (e) {
       const errorMsg = e.message;
@@ -364,7 +368,7 @@ const getProfile = {
         .status(400)
         .send(responseCreator("error", "Request can't be proceed"));
     }
-  }
+  },
 };
 
 const loadProfileImage = {
@@ -409,14 +413,14 @@ const logout = {
         tokenManager.generateToken(
           {},
           config.get("ACCESS_TOKEN_SECRET"),
-          `${-1000 * 60 * 60 * 24 * config.get("ACCESS_TOKEN_TIME")}`
+          `${-1 * 1000 * 60 * 60 * 24 * config.get("ACCESS_TOKEN_TIME")}`
         ),
         {
           sameSite: "strict",
           path: "/",
-          maxAge: new Date(
-            new Date().getTime() -
-            1000 * 60 * 60 * 24 * config.get("ACCESS_TOKEN_TIME")
+          expires: new Date(
+            new Date().getTime() +
+              -1 * 1000 * 60 * 60 * 24 * config.get("ACCESS_TOKEN_TIME")
           ),
           httpOnly: true,
           //secure: true,
