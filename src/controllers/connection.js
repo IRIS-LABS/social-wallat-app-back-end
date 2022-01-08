@@ -172,9 +172,40 @@ const getAllUsers = {
     },
 }
 
+const getDisconnectedUsers = {
+    security: {
+        authenticationLayer: true,
+        authorizationLayer: false,
+        validationLayer: false,
+    },
+
+    async handler(req, res) {
+        try {
+            const disconnectedUsers = await sequelize
+                .query(`SELECT * 
+                        FROM Users
+                        WHERE userID != '${req.user.userID}' AND userID NOT IN (SELECT connectedUSerID
+                        FROM Connections
+                        WHERE userID ='${req.user.userID}')`, { type: sequelize.QueryTypes.SELECT });
+            res
+                .status(200)
+                .send(
+                    responseCreator("success", "Successfully retrieved disconnected users", disconnectedUsers)
+                );
+        } catch (e) {
+            const errorMsg = e.message;
+            console.log(errorMsg);
+            res
+                .status(400)
+                .send(responseCreator("error", "Request can't be proceed"));
+        }
+    },
+}
+
 module.exports = {
     addConnection,
     removeConnection,
     getConnections,
+    getDisconnectedUsers,
     getAllUsers
 };
