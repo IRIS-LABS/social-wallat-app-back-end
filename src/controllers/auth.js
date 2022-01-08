@@ -5,6 +5,8 @@ const passwordComplexity = require("joi-password-complexity");
 const bcrypt = require("bcrypt");
 const tokenManager = require("../utils/tokenManager");
 const config = require("config");
+var fs = require('fs');
+const resolve = require('path').resolve
 
 const signUp = {
   security: {
@@ -321,6 +323,19 @@ const updateProfile = {
     }
   }
 };
+
+const uploadProfilePicture = {
+  security: {
+    authenticationLayer: true,
+    authorizationLayer: false,
+    validationLayer: false,
+  },
+
+  async handler(req, res, next) {
+    next();
+  }
+};
+
 const getProfile = {
   security: {
     authenticationLayer: true,
@@ -349,6 +364,34 @@ const getProfile = {
         .status(400)
         .send(responseCreator("error", "Request can't be proceed"));
     }
+  }
+};
+
+const loadProfileImage = {
+  security: {
+    authenticationLayer: true,
+    authorizationLayer: false,
+    validationLayer: true,
+  },
+  validationSchema: {
+    query: {
+      userID: Joi.string().required()
+    },
+  },
+  async handler(req, res) {
+    const fileName = resolve(`uploads/${req.query.userID}`);
+    console.log(fileName);
+    const readStream = fs.createReadStream(fileName);
+
+    readStream.on('open', function () {
+      readStream.pipe(res);
+    });
+
+    // This catches any errors that happen while creating the readable stream (usually invalid names)
+    readStream.on('error', function (err) {
+      console.log("Error Stream");
+      res.send("Error");
+    });
   }
 };
 
@@ -396,6 +439,8 @@ module.exports = {
   signUp,
   signIn,
   updateProfile,
+  uploadProfilePicture,
+  loadProfileImage,
   getProfile,
   logout,
 };
