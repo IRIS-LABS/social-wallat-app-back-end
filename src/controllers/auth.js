@@ -5,6 +5,8 @@ const passwordComplexity = require("joi-password-complexity");
 const bcrypt = require("bcrypt");
 const tokenManager = require("../utils/tokenManager");
 const config = require("config");
+var fs = require('fs');
+const resolve = require('path').resolve
 
 const signUp = {
   security: {
@@ -365,6 +367,25 @@ const getProfile = {
   }
 };
 
+const loadProfileImage = {
+  security: {
+    authenticationLayer: true,
+    authorizationLayer: false,
+    validationLayer: true,
+  },
+  validationSchema: {
+    query: {
+      userID: Joi.string().required()
+    },
+  },
+  async handler(req, res) {
+    const fileName = resolve(`uploads/${req.query.userID}`);
+    console.log(fileName);
+    const readStream = fs.createReadStream(fileName);
+    readStream.pipe(res);
+  }
+};
+
 const logout = {
   security: {
     authenticationLayer: true,
@@ -410,6 +431,7 @@ module.exports = {
   signIn,
   updateProfile,
   uploadProfilePicture,
+  loadProfileImage,
   getProfile,
   logout,
 };
