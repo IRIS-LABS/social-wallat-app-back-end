@@ -321,6 +321,19 @@ const updateProfile = {
     }
   }
 };
+
+const uploadProfilePicture = {
+  security: {
+    authenticationLayer: true,
+    authorizationLayer: false,
+    validationLayer: false,
+  },
+
+  async handler(req, res, next) {
+    next();
+  }
+};
+
 const getProfile = {
   security: {
     authenticationLayer: true,
@@ -396,6 +409,7 @@ module.exports = {
   signUp,
   signIn,
   updateProfile,
+  uploadProfilePicture,
   getProfile,
   logout,
 };
