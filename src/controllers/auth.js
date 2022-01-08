@@ -382,7 +382,16 @@ const loadProfileImage = {
     const fileName = resolve(`uploads/${req.query.userID}`);
     console.log(fileName);
     const readStream = fs.createReadStream(fileName);
-    readStream.pipe(res);
+
+    readStream.on('open', function () {
+      readStream.pipe(res);
+    });
+
+    // This catches any errors that happen while creating the readable stream (usually invalid names)
+    readStream.on('error', function (err) {
+      console.log("Error Stream");
+      res.send("Error");
+    });
   }
 };
 
