@@ -14,10 +14,16 @@
     "dialect": "mysql"
   },
   "production": {
-    "username": "root",
-    "password": null,
-    "database": "database_production",
-    "host": "127.0.0.1",
-    "dialect": "mysql"
+    "username": "admin",
+    "password": "LDGATk6GAUvhKCiQLb22",
+    "database": "social-wallet-db",
+    "host": "social-wallet-db.c9ajautatsid.ap-south-1.rds.amazonaws.com",
+    "dialect": "mysql",
+    "logging": false,
+    "dialectOptions": {
+      "ssl": {
+        "rejectUnauthorized": false
+      }
+    }
   }
 }
