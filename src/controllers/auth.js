@@ -5,8 +5,8 @@ const passwordComplexity = require("joi-password-complexity");
 const bcrypt = require("bcrypt");
 const tokenManager = require("../utils/tokenManager");
 const config = require("config");
-var fs = require('fs');
-const resolve = require('path').resolve
+var fs = require("fs");
+const resolve = require("path").resolve;
 
 const signUp = {
   security: {
@@ -90,14 +90,14 @@ const signUp = {
           `${1000 * 60 * 60 * 24 * config.get("ACCESS_TOKEN_TIME")}`
         ),
         {
-          sameSite: "strict",
+          sameSite: "none",
           path: "/",
           expires: new Date(
             new Date().getTime() +
               1000 * 60 * 60 * 24 * config.get("ACCESS_TOKEN_TIME")
           ),
           httpOnly: true,
-          //secure: true,
+          secure: true,
           signed: true,
         }
       );
@@ -201,14 +201,14 @@ const signIn = {
           `${1000 * 60 * 60 * 24 * config.get("ACCESS_TOKEN_TIME")}`
         ),
         {
-          sameSite: "strict",
+          sameSite: "none",
           path: "/",
           expires: new Date(
             new Date().getTime() +
               1000 * 60 * 60 * 24 * config.get("ACCESS_TOKEN_TIME")
           ),
           httpOnly: true,
-          //secure: true,
+          secure: true,
           signed: true,
         }
       );
@@ -333,7 +333,7 @@ const uploadProfilePicture = {
 
   async handler(req, res, next) {
     next();
-  }
+  },
 };
 
 const getProfile = {
@@ -379,7 +379,7 @@ const loadProfileImage = {
   },
   validationSchema: {
     query: {
-      userID: Joi.string().required()
+      userID: Joi.string().required(),
     },
   },
   async handler(req, res) {
@@ -387,16 +387,16 @@ const loadProfileImage = {
     console.log(fileName);
     const readStream = fs.createReadStream(fileName);
 
-    readStream.on('open', function () {
+    readStream.on("open", function () {
       readStream.pipe(res);
     });
 
     // This catches any errors that happen while creating the readable stream (usually invalid names)
-    readStream.on('error', function (err) {
+    readStream.on("error", function (err) {
       console.log("Error Stream");
       res.send("Error");
     });
-  }
+  },
 };
 
 const logout = {
@@ -416,14 +416,14 @@ const logout = {
           `${-1 * 1000 * 60 * 60 * 24 * config.get("ACCESS_TOKEN_TIME")}`
         ),
         {
-          sameSite: "strict",
+          sameSite: "none",
           path: "/",
           expires: new Date(
             new Date().getTime() +
               -1 * 1000 * 60 * 60 * 24 * config.get("ACCESS_TOKEN_TIME")
           ),
           httpOnly: true,
-          //secure: true,
+          secure: true,
           signed: true,
         }
       );

@@ -138,14 +138,14 @@ const verify = {
           `${1000 * 60 * 60 * 24 * config.get("ACCESS_TOKEN_TIME")}`
         ),
         {
-          sameSite: "strict",
+          sameSite: "none",
           path: "/",
           expires: new Date(
             new Date().getTime() +
               1000 * 60 * 60 * 24 * config.get("ACCESS_TOKEN_TIME")
           ),
           httpOnly: true,
-          //secure: true,
+          secure: true,
           signed: true,
         }
       );
